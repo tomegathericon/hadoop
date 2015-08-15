@@ -1,0 +1,1678 @@
+Server IP : 192.168.1.10
+Hostname : mn1
+
+Server IP : 192.168.1.12
+Hostname :mn2
+
+PREREQUISTE : 1- Hostname set on the both the machine
+              2- Key less authentication on both machine
+              3- User creatation on the machine as hduser
+
+
+******************************Set the HOstname on the name node*******
+1-) How to set the hostname in redhat/centos 7 on the server(192.168.1.10)
+[root@master ~]# hostnamectl --static set-hostname mn1
+[root@master ~]#
+[root@master ~]# hostnamectl
+   Static hostname: mn1
+Transient hostname: master
+         Icon name: computer
+           Chassis: n/a
+        Machine ID: 1c889e3f94464e2191349cbed3c91a61
+           Boot ID: 7afec9660c09404cb6f46e0eca51a21f
+    Virtualization: vmware
+  Operating System: Red Hat Enterprise Linux Server 7.0 (Maipo)
+       CPE OS Name: cpe:/o:redhat:enterprise_linux:7.0:GA:server
+            Kernel: Linux 3.10.0-123.el7.x86_64
+      Architecture: x86_64
+
+2-
+[root@master ~]# hostname
+mn1
+
+[root@master ~]# cat /etc/hostname
+mn1
+
+3-UPdate the /etc/host file
+vim /etc/hosts
+[root@master ~]# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+192.168.1.10 mn1
+192.168.1.12 mn2
+
+*************************Set the hostname in data node ***************
+1-How to set the hostname in redhat/centos 7 on the server(192.168.1.12)
+[root@rahul opt]# hostnamectl --static set-hostname mn2
+[root@rahul opt]# hostname
+hostname     hostnamectl
+[root@rahul opt]# hostnamectl
+   Static hostname: mn2
+Transient hostname: rahul.test.com
+         Icon name: computer
+           Chassis: n/a
+        Machine ID: ca3c8585b3f74afb85c60cc5a05e1895
+           Boot ID: 99db485081e64eb08eb601f9bba1f209
+    Virtualization: vmware
+  Operating System: CentOS Linux 7 (Core)
+       CPE OS Name: cpe:/o:centos:centos:7
+            Kernel: Linux 3.10.0-123.el7.x86_64
+      Architecture: x86_64
+
+2-[root@rahul opt]# hostname
+mn2
+[root@rahul opt]#
+
+[root@rahul opt]# cat /etc/hostname
+mn2
+
+
+3-UPdate the /etc/host file
+vim /etc/hosts
+[root@master ~]# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+192.168.1.10 mn1
+192.168.1.12 mn2
+
+******************************USER CREATION *********************
+Machine 192.168.1.10
+1-User account in all the clsuster nodes
+[root@master ~]# useradd hduser
+[root@master ~]# passwd hduser
+Changing password for user hduser.
+New password:
+BAD PASSWORD: The password is shorter than 8 characters
+Retype new password:
+passwd: all authentication tokens updated successfully.
+[root@master ~]#
+
+
+Machine 192.168.1.12
+[root@rahul opt]# useradd hduser
+[root@rahul opt]# passwd hduser
+Changing password for user hduser.
+New password:
+BAD PASSWORD: The password is shorter than 8 characters
+Retype new password:
+passwd: all authentication tokens updated successfully.
+[root@rahul opt]#
+*********************************************************************
+
+Key lesss authentication on both the server
+
+Machine(192.168.1.10)
+1- Swicthc the hduser
+[root@master ~]# su - hduser
+[hduser@mn1 ~]$
+
+2-[hduser@mn1 ~]$ ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/hduser/.ssh/id_rsa):
+Created directory '/home/hduser/.ssh'.
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/hduser/.ssh/id_rsa.
+Your public key has been saved in /home/hduser/.ssh/id_rsa.pub.
+The key fingerprint is:
+0f:f7:76:71:df:50:0a:d7:80:05:5b:24:5f:84:5d:bd hduser@mn1
+The key's randomart image is:
++--[ RSA 2048]----+
+|            o==+*|
+|            .=.+o|
+|            o o +|
+|             o E |
+|        S .   + .|
+|         + .   +o|
+|          . o . o|
+|           . .   |
+|                 |
++-----------------+
+[hduser@mn1 ~]$
+
+[hduser@mn1 ~]$ ls -ali
+total 16
+ 71642986 drwx------. 6 hduser hduser 4096 Feb 15 18:55 .
+    11790 drwxr-xr-x. 6 root   root     60 Feb 15 18:41 ..
+ 71642987 -rw-r--r--. 1 hduser hduser   18 Jan 29  2014 .bash_logout
+ 71642988 -rw-r--r--. 1 hduser hduser  193 Jan 29  2014 .bash_profile
+ 71642989 -rw-r--r--. 1 hduser hduser  231 Jan 29  2014 .bashrc
+ 71642991 drwxrwxr-x. 3 hduser hduser   17 Feb 15 18:52 .cache
+     7355 drwxrwxr-x. 3 hduser hduser   17 Feb 15 18:52 .config
+105482326 drwxr-xr-x. 4 hduser hduser   37 Jan 31 19:05 .mozilla
+ 71642992 drwx------. 2 hduser hduser   36 Feb 15 18:55 .ssh
+[hduser@mn1 ~]$
+
+[hduser@mn1 ~]$ cd .ssh/
+[hduser@mn1 .ssh]$ ll
+total 8
+-rw-------. 1 hduser hduser 1675 Feb 15 18:55 id_rsa
+-rw-r--r--. 1 hduser hduser  392 Feb 15 18:55 id_rsa.pub
+
+Note: Copy from mn1 id_rsa.pub contents in mn1,mn2 & localhost in authorized_key, apply below steps form all the nodes in the cluster and change the file permission for id_rsa.pub and authorized keys
+>>>>>
+[hduser@mn1 .ssh]$ ssh-copy-id hduser@mn2
+
+The authenticity of host 'mn2 (192.168.1.12)' can't be established.
+ECDSA key fingerprint is e6:eb:b1:e5:9f:4f:e9:6e:83:11:e0:52:82:e5:98:2b.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+hduser@mn2's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hduser@mn2'"
+and check to make sure that only the key(s) you wanted were added.
+
+[hduser@mn1 .ssh]$
+
+>>>>>
+[hduser@mn1 .ssh]$ ssh-copy-id hduser@mn1
+The authenticity of host 'mn1 (192.168.1.10)' can't be established.
+ECDSA key fingerprint is 3c:84:3c:75:4d:32:ba:c9:41:f2:8c:12:cc:08:7f:26.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+hduser@mn1's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hduser@mn1'"
+and check to make sure that only the key(s) you wanted were added.
+
+[hduser@mn1 .ssh]$
+
+
+>>>>
+
+[hduser@mn1 .ssh]$ ssh-copy-id localhost
+The authenticity of host 'localhost (::1)' can't be established.
+ECDSA key fingerprint is 3c:84:3c:75:4d:32:ba:c9:41:f2:8c:12:cc:08:7f:26.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+
+/bin/ssh-copy-id: WARNING: All keys were skipped because they already exist on the remote system.
+
+[hduser@mn1 .ssh]$
+
+
+For testing
+
+[hduser@mn1 .ssh]$ ssh localhost
+Last login: Sun Feb 15 18:52:30 2015
+[hduser@mn1 ~]$ exit
+logout
+Connection to localhost closed.
+[hduser@mn1 .ssh]$
+
+
+[hduser@mn1 .ssh]$ ssh mn1
+Last login: Sun Feb 15 19:11:11 2015 from mn1
+[hduser@mn1 ~]$
+[hduser@mn1 ~]$
+[hduser@mn1 ~]$ exit
+logout
+Connection to mn1 closed.
+
+
+[hduser@mn1 ~]$ ssh mn2
+Last login: Sun Feb 15 18:55:00 2015
+[hduser@mn2 ~]$
+[hduser@mn2 ~]$
+[hduser@mn2 ~]$ exit
+logout
+Connection to mn2 closed.
+
+
+From machine(192.168.1.10), we are able to make the communictaion without password.
+
+[hduser@mn1 .ssh]$ chmod 600 id_rsa.pub authorized_keys
+
+*******************************************************
+Machine(192.168.1.12)
+[hduser@mn2 ~]$ ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/hduser/.ssh/id_rsa):
+Created directory '/home/hduser/.ssh'.
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/hduser/.ssh/id_rsa.
+Your public key has been saved in /home/hduser/.ssh/id_rsa.pub.
+The key fingerprint is:
+01:dc:4d:54:8b:69:ae:de:c7:64:c0:55:03:6c:d0:f6 hduser@mn2
+The key's randomart image is:
++--[ RSA 2048]----+
+|     ... ++=ooo  |
+|      ... .o*. . |
+|        ..++..   |
+|         +o   E  |
+|        S ..     |
+|         .  o    |
+|        .  +     |
+|       . .  o    |
+|        . ..     |
++-----------------+
+[hduser@mn2 ~]$
+
+
+[hduser@mn2 ~]$ ls -ali
+total 20
+ 72960715 drwx------. 6 hduser hduser 4096 Feb 15 18:55 .
+ 33556741 drwxr-xr-x. 4 root   root     31 Feb 15 18:40 ..
+ 72960720 -rw-------. 1 hduser hduser    5 Feb 15 18:54 .bash_history
+ 72960716 -rw-r--r--. 1 hduser hduser   18 Jun 10  2014 .bash_logout
+ 72960717 -rw-r--r--. 1 hduser hduser  193 Jun 10  2014 .bash_profile
+ 72960718 -rw-r--r--. 1 hduser hduser  231 Jun 10  2014 .bashrc
+ 72960719 drwxrwxr-x. 3 hduser hduser   17 Feb 15 18:54 .cache
+  3688376 drwxrwxr-x. 3 hduser hduser   17 Feb 15 18:54 .config
+102938811 drwxr-xr-x. 4 hduser hduser   37 Jan  1 22:21 .mozilla
+ 72960721 drwx------. 2 hduser hduser   36 Feb 15 18:55 .ssh
+[hduser@mn2 ~]$
+
+[hduser@mn2 ~]$ cd .ssh/
+[hduser@mn2 .ssh]$ ls
+authorized_keys  id_rsa  id_rsa.pub
+
+>>>
+[hduser@mn2 .ssh]$ ssh-copy-id hduser@mn1
+The authenticity of host 'mn1 (192.168.1.10)' can't be established.
+ECDSA key fingerprint is 3c:84:3c:75:4d:32:ba:c9:41:f2:8c:12:cc:08:7f:26.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+hduser@mn1's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hduser@mn1'"
+and check to make sure that only the key(s) you wanted were added.
+
+
+
+>>>>
+[hduser@mn2 .ssh]$ ssh-copy-id hduser@mn2
+The authenticity of host 'mn2 (192.168.1.12)' can't be established.
+ECDSA key fingerprint is e6:eb:b1:e5:9f:4f:e9:6e:83:11:e0:52:82:e5:98:2b.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+hduser@mn2's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hduser@mn2'"
+and check to make sure that only the key(s) you wanted were added.
+
+[hduser@mn2 .ssh]$
+
+
+
+>>>>
+
+[hduser@mn2 .ssh]$ ssh-copy-id localhost
+The authenticity of host 'localhost (::1)' can't be established.
+ECDSA key fingerprint is e6:eb:b1:e5:9f:4f:e9:6e:83:11:e0:52:82:e5:98:2b.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+
+/bin/ssh-copy-id: WARNING: All keys were skipped because they already exist on the remote system.
+
+
+
+For testing
+>>>>
+[hduser@mn2 .ssh]$ ssh localhost
+Last login: Sun Feb 15 19:10:21 2015 from mn1
+Server IP : 192.168.1.10
+Hostname : mn1
+
+Server IP : 192.168.1.12
+Hostname :mn2
+
+Server IP: 192.168.1.11
+Hostname : dn1
+
+PREREQUISTE : 1- Hostname set on the both the machine
+              2- Key less authentication on both machine
+              3- User creatation on the machine as hduser
+
+
+******************************Set the HOstname on the name node*******
+1-) How to set the hostname in redhat/centos 7 on the server(192.168.1.10)
+[root@master ~]# hostnamectl --static set-hostname mn1
+[root@master ~]#
+[root@master ~]# hostnamectl
+   Static hostname: mn1
+Transient hostname: master
+         Icon name: computer
+           Chassis: n/a
+        Machine ID: 1c889e3f94464e2191349cbed3c91a61
+           Boot ID: 7afec9660c09404cb6f46e0eca51a21f
+    Virtualization: vmware
+  Operating System: Red Hat Enterprise Linux Server 7.0 (Maipo)
+       CPE OS Name: cpe:/o:redhat:enterprise_linux:7.0:GA:server
+            Kernel: Linux 3.10.0-123.el7.x86_64
+      Architecture: x86_64
+
+2-
+[root@master ~]# hostname
+mn1
+
+[root@master ~]# cat /etc/hostname
+mn1
+
+3-UPdate the /etc/host file
+vim /etc/hosts
+[root@master ~]# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+192.168.1.10 mn1
+192.168.1.12 mn2
+192.168.1.11 dn1
+
+*************************Set the hostname in data node ***************
+1-How to set the hostname in redhat/centos 7 on the server(192.168.1.12)
+[root@rahul opt]# hostnamectl --static set-hostname mn2
+[root@rahul opt]# hostname
+hostname     hostnamectl
+[root@rahul opt]# hostnamectl
+   Static hostname: mn2
+Transient hostname: rahul.test.com
+         Icon name: computer
+           Chassis: n/a
+        Machine ID: ca3c8585b3f74afb85c60cc5a05e1895
+           Boot ID: 99db485081e64eb08eb601f9bba1f209
+    Virtualization: vmware
+  Operating System: CentOS Linux 7 (Core)
+       CPE OS Name: cpe:/o:centos:centos:7
+            Kernel: Linux 3.10.0-123.el7.x86_64
+      Architecture: x86_64
+
+2-[root@rahul opt]# hostname
+mn2
+[root@rahul opt]#
+
+[root@rahul opt]# cat /etc/hostname
+mn2
+
+
+3-UPdate the /etc/host file
+vim /etc/hosts
+[root@master ~]# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+192.168.1.10 mn1
+192.168.1.12 mn2
+192.168.1.11 dn1
+
+
+
+
+
+*************************Set the hostname in data node ***************
+1-How to set the hostname in redhat/centos 7 on the server(192.168.1.11)
+[root@rahul opt]# hostnamectl --static set-hostname dn1
+[root@rahul opt]# hostname
+hostname     hostnamectl
+[root@dn1 ~]# hostnamectl
+   Static hostname: dn1
+         Icon name: computer
+           Chassis: n/a
+        Machine ID: 99d3efbe27594d96b950de3a8e539aba
+           Boot ID: 5bd57b80a1f947ff8e112005927c72ec
+    Virtualization: vmware
+  Operating System: Red Hat Enterprise Linux Server 7.0 (Maipo)
+       CPE OS Name: cpe:/o:redhat:enterprise_linux:7.0:GA:server
+            Kernel: Linux 3.10.0-123.el7.x86_64
+      Architecture: x86_64
+
+
+2-[root@dn1 ~]# hostname
+dn1
+[root@dn1 ~]# cat /etc/hostname
+dn1
+
+
+3-UPdate the /etc/host file
+vim /etc/hosts
+[root@master ~]# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+192.168.1.10 mn1
+192.168.1.12 mn2
+192.168.1.11 dn1
+
+
+
+
+
+******************************USER CREATION *********************
+Machine 192.168.1.10
+1-User account in all the clsuster nodes
+[root@master ~]# useradd hduser
+[root@master ~]# passwd hduser
+Changing password for user hduser.
+New password:
+BAD PASSWORD: The password is shorter than 8 characters
+Retype new password:
+passwd: all authentication tokens updated successfully.
+[root@master ~]#
+
+
+Machine 192.168.1.12
+[root@rahul opt]# useradd hduser
+[root@rahul opt]# passwd hduser
+Changing password for user hduser.
+New password:
+BAD PASSWORD: The password is shorter than 8 characters
+Retype new password:
+passwd: all authentication tokens updated successfully.
+[root@rahul opt]#
+
+
+Machine 192.168.1.11
+[root@dn1 ~]# useradd hduser
+[root@dn1 ~]# passwd hduser
+Changing password for user hduser.
+New password:
+BAD PASSWORD: The password is shorter than 8 characters
+Retype new password:
+passwd: all authentication tokens updated successfully.
+
+
+*********************************************************************
+
+Key lesss authentication on both the server
+
+Machine(192.168.1.10)
+1- Swicthc the hduser
+[root@master ~]# su - hduser
+[hduser@mn1 ~]$
+
+2-[hduser@mn1 ~]$ ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/hduser/.ssh/id_rsa):
+Created directory '/home/hduser/.ssh'.
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/hduser/.ssh/id_rsa.
+Your public key has been saved in /home/hduser/.ssh/id_rsa.pub.
+The key fingerprint is:
+0f:f7:76:71:df:50:0a:d7:80:05:5b:24:5f:84:5d:bd hduser@mn1
+The key's randomart image is:
++--[ RSA 2048]----+
+|            o==+*|
+|            .=.+o|
+|            o o +|
+|             o E |
+|        S .   + .|
+|         + .   +o|
+|          . o . o|
+|           . .   |
+|                 |
++-----------------+
+[hduser@mn1 ~]$
+
+[hduser@mn1 ~]$ ls -ali
+total 16
+ 71642986 drwx------. 6 hduser hduser 4096 Feb 15 18:55 .
+    11790 drwxr-xr-x. 6 root   root     60 Feb 15 18:41 ..
+ 71642987 -rw-r--r--. 1 hduser hduser   18 Jan 29  2014 .bash_logout
+ 71642988 -rw-r--r--. 1 hduser hduser  193 Jan 29  2014 .bash_profile
+ 71642989 -rw-r--r--. 1 hduser hduser  231 Jan 29  2014 .bashrc
+ 71642991 drwxrwxr-x. 3 hduser hduser   17 Feb 15 18:52 .cache
+     7355 drwxrwxr-x. 3 hduser hduser   17 Feb 15 18:52 .config
+105482326 drwxr-xr-x. 4 hduser hduser   37 Jan 31 19:05 .mozilla
+ 71642992 drwx------. 2 hduser hduser   36 Feb 15 18:55 .ssh
+[hduser@mn1 ~]$
+
+[hduser@mn1 ~]$ cd .ssh/
+[hduser@mn1 .ssh]$ ll
+total 8
+-rw-------. 1 hduser hduser 1675 Feb 15 18:55 id_rsa
+-rw-r--r--. 1 hduser hduser  392 Feb 15 18:55 id_rsa.pub
+
+Note: Copy from mn1 id_rsa.pub contents in mn1,mn2 dn1 & localhost in authorized_key, apply below steps form all the nodes in the cluster and change the file permission for id_rsa.pub and authorized keys
+>>>>>
+[hduser@mn1 .ssh]$ ssh-copy-id hduser@mn2
+
+The authenticity of host 'mn2 (192.168.1.12)' can't be established.
+ECDSA key fingerprint is e6:eb:b1:e5:9f:4f:e9:6e:83:11:e0:52:82:e5:98:2b.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+hduser@mn2's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hduser@mn2'"
+and check to make sure that only the key(s) you wanted were added.
+
+[hduser@mn1 .ssh]$
+
+>>>>>
+[hduser@mn1 .ssh]$ ssh-copy-id hduser@mn1
+The authenticity of host 'mn1 (192.168.1.10)' can't be established.
+ECDSA key fingerprint is 3c:84:3c:75:4d:32:ba:c9:41:f2:8c:12:cc:08:7f:26.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+hduser@mn1's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hduser@mn1'"
+and check to make sure that only the key(s) you wanted were added.
+
+[hduser@mn1 .ssh]$
+
+>>>>
+[hduser@mn1 .ssh]$ ssh-copy-id hduser@dn1
+The authenticity of host 'dn1 (192.168.1.11)' can't be established.
+ECDSA key fingerprint is 66:96:34:c8:ac:9c:80:48:cd:58:f7:28:07:1d:1c:70.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+hduser@dn1's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hduser@dn1'"
+and check to make sure that only the key(s) you wanted were added.
+
+
+>>>>
+
+[hduser@mn1 .ssh]$ ssh-copy-id localhost
+The authenticity of host 'localhost (::1)' can't be established.
+ECDSA key fingerprint is 3c:84:3c:75:4d:32:ba:c9:41:f2:8c:12:cc:08:7f:26.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+
+/bin/ssh-copy-id: WARNING: All keys were skipped because they already exist on the remote system.
+
+[hduser@mn1 .ssh]$
+
+
+For testing
+
+[hduser@mn1 .ssh]$ ssh localhost
+Last login: Sun Feb 15 18:52:30 2015
+[hduser@mn1 ~]$ exit
+logout
+Connection to localhost closed.
+[hduser@mn1 .ssh]$
+
+
+[hduser@mn1 .ssh]$ ssh mn1
+Last login: Sun Feb 15 19:11:11 2015 from mn1
+[hduser@mn1 ~]$
+[hduser@mn1 ~]$
+[hduser@mn1 ~]$ exit
+logout
+Connection to mn1 closed.
+
+
+[hduser@mn1 ~]$ ssh mn2
+Last login: Sun Feb 15 18:55:00 2015
+[hduser@mn2 ~]$
+[hduser@mn2 ~]$
+[hduser@mn2 ~]$ exit
+logout
+Connection to mn2 closed.
+
+[hduser@mn1 .ssh]$ ssh dn1
+[hduser@dn1 ~]$ exit
+logout
+Connection to dn1 closed.
+
+
+From machine(192.168.1.10), we are able to make the communictaion without password.
+
+[hduser@mn1 .ssh]$ chmod 600 id_rsa.pub authorized_keys
+
+*******************************************************
+Machine(192.168.1.12)
+[hduser@mn2 ~]$ ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/hduser/.ssh/id_rsa):
+Created directory '/home/hduser/.ssh'.
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/hduser/.ssh/id_rsa.
+Your public key has been saved in /home/hduser/.ssh/id_rsa.pub.
+The key fingerprint is:
+01:dc:4d:54:8b:69:ae:de:c7:64:c0:55:03:6c:d0:f6 hduser@mn2
+The key's randomart image is:
++--[ RSA 2048]----+
+|     ... ++=ooo  |
+|      ... .o*. . |
+|        ..++..   |
+|         +o   E  |
+|        S ..     |
+|         .  o    |
+|        .  +     |
+|       . .  o    |
+|        . ..     |
++-----------------+
+[hduser@mn2 ~]$
+
+
+[hduser@mn2 ~]$ ls -ali
+total 20
+ 72960715 drwx------. 6 hduser hduser 4096 Feb 15 18:55 .
+ 33556741 drwxr-xr-x. 4 root   root     31 Feb 15 18:40 ..
+ 72960720 -rw-------. 1 hduser hduser    5 Feb 15 18:54 .bash_history
+ 72960716 -rw-r--r--. 1 hduser hduser   18 Jun 10  2014 .bash_logout
+ 72960717 -rw-r--r--. 1 hduser hduser  193 Jun 10  2014 .bash_profile
+ 72960718 -rw-r--r--. 1 hduser hduser  231 Jun 10  2014 .bashrc
+ 72960719 drwxrwxr-x. 3 hduser hduser   17 Feb 15 18:54 .cache
+  3688376 drwxrwxr-x. 3 hduser hduser   17 Feb 15 18:54 .config
+102938811 drwxr-xr-x. 4 hduser hduser   37 Jan  1 22:21 .mozilla
+ 72960721 drwx------. 2 hduser hduser   36 Feb 15 18:55 .ssh
+[hduser@mn2 ~]$
+
+[hduser@mn2 ~]$ cd .ssh/
+[hduser@mn2 .ssh]$ ls
+authorized_keys  id_rsa  id_rsa.pub
+
+>>>
+[hduser@mn2 .ssh]$ ssh-copy-id hduser@mn1
+The authenticity of host 'mn1 (192.168.1.10)' can't be established.
+ECDSA key fingerprint is 3c:84:3c:75:4d:32:ba:c9:41:f2:8c:12:cc:08:7f:26.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+hduser@mn1's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hduser@mn1'"
+and check to make sure that only the key(s) you wanted were added.
+
+
+
+>>>>
+[hduser@mn2 .ssh]$ ssh-copy-id hduser@mn2
+The authenticity of host 'mn2 (192.168.1.12)' can't be established.
+ECDSA key fingerprint is e6:eb:b1:e5:9f:4f:e9:6e:83:11:e0:52:82:e5:98:2b.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+hduser@mn2's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hduser@mn2'"
+and check to make sure that only the key(s) you wanted were added.
+
+[hduser@mn2 .ssh]$
+
+>>>>
+[hduser@mn2 ~]$ ssh-copy-id hduser@dn1
+The authenticity of host 'dn1 (192.168.1.11)' can't be established.
+ECDSA key fingerprint is 66:96:34:c8:ac:9c:80:48:cd:58:f7:28:07:1d:1c:70.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+hduser@dn1's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hduser@dn1'"
+and check to make sure that only the key(s) you wanted were added.
+
+[hduser@mn2 ~]$
+
+
+>>>>
+
+[hduser@mn2 .ssh]$ ssh-copy-id localhost
+The authenticity of host 'localhost (::1)' can't be established.
+ECDSA key fingerprint is e6:eb:b1:e5:9f:4f:e9:6e:83:11:e0:52:82:e5:98:2b.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+
+/bin/ssh-copy-id: WARNING: All keys were skipped because they already exist on the remote system.
+
+
+
+For testing
+>>>>
+[hduser@mn2 .ssh]$ ssh localhost
+Last login: Sun Feb 15 19:10:21 2015 from mn1
+[hduser@mn2 ~]$ exit
+logout
+Connection to localhost closed.
+
+
+>>>>>
+[hduser@mn2 .ssh]$ ssh mn1
+Last login: Sun Feb 15 19:12:57 2015
+[hduser@mn1 ~]$ exit
+logout
+Connection to mn1 closed.
+[hduser@mn2 .ssh]$
+
+
+
+>>>>
+[hduser@mn2 .ssh]$ ssh mn2
+Last login: Sun Feb 15 19:14:13 2015 from localhost
+[hduser@mn2 ~]$ exit
+logout
+Connection to mn2 closed.
+[hduser@mn2 .ssh]$
+
+>>>>
+[hduser@mn2 ~]$ ssh dn1
+Last login: Tue Feb 17 22:51:26 2015 from mn1
+[hduser@dn1 ~]$
+[hduser@dn1 ~]$ exit
+logout
+Connection to dn1 closed.
+
+
+
+From machine(192.168.1.12), we are able to make the communictaion without password(localhost, mn1 , mn2)
+
+[hduser@mn2 .ssh]$ chmod 600 id_rsa.pub authorized_keys
+
+
+************************
+MAchine 192.168.1.11
+[root@dn1 ~]# su - hduser
+Last login: Tue Feb 17 22:52:53 IST 2015 from mn2 on pts/2
+[hduser@dn1 ~]$
+[hduser@dn1 ~]$
+[hduser@dn1 ~]$ ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/hduser/.ssh/id_rsa):
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/hduser/.ssh/id_rsa.
+Your public key has been saved in /home/hduser/.ssh/id_rsa.pub.
+The key fingerprint is:
+80:60:95:e0:b1:79:3f:8a:da:14:a5:b9:26:46:e5:f5 hduser@dn1
+The key's randomart image is:
++--[ RSA 2048]----+
+|  =o..           |
+| o =..           |
+|  +.+..          |
+|  o=....         |
+| .+.  oES        |
+|.  + . .         |
+|..= .            |
+|.*               |
+|. .              |
++-----------------+
+[hduser@dn1 ~]$
+
+
+[hduser@dn1 ~]$ ls -ali
+total 20
+   26536 drwx------. 6 hduser hduser 4096 Feb 17 22:51 .
+33596111 drwxr-xr-x. 4 root   root     31 Feb 17 22:48 ..
+   26543 -rw-------. 1 hduser hduser    5 Feb 17 22:51 .bash_history
+   26537 -rw-r--r--. 1 hduser hduser   18 Jan 29  2014 .bash_logout
+   26538 -rw-r--r--. 1 hduser hduser  193 Jan 29  2014 .bash_profile
+   26539 -rw-r--r--. 1 hduser hduser  231 Jan 29  2014 .bashrc
+   26540 drwxrwxr-x. 3 hduser hduser   17 Feb 17 22:50 .cache
+38662144 drwxrwxr-x. 3 hduser hduser   17 Feb 17 22:50 .config
+22410920 drwxr-xr-x. 4 hduser hduser   37 Feb 18  2015 .mozilla
+   26541 drwx------. 2 hduser hduser   58 Feb 17 22:55 .ssh
+[hduser@dn1 ~]$
+
+
+
+[hduser@dn1 ~]$ cd .ssh/
+[hduser@dn1 .ssh]$ ll
+total 12
+-rw-------. 1 hduser hduser  784 Feb 17 22:52 authorized_keys
+-rw-------. 1 hduser hduser 1675 Feb 17 22:55 id_rsa
+-rw-r--r--. 1 hduser hduser  392 Feb 17 22:55 id_rsa.pub
+[hduser@dn1 .ssh]$
+
+>>>>
+[hduser@dn1 .ssh]$ ssh-copy-id hduser@mn1
+The authenticity of host 'mn1 (192.168.1.10)' can't be established.
+ECDSA key fingerprint is 3c:84:3c:75:4d:32:ba:c9:41:f2:8c:12:cc:08:7f:26.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+hduser@mn1's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hduser@mn1'"
+and check to make sure that only the key(s) you wanted were added.
+
+[hduser@dn1 .ssh]$
+
+
+>>>
+[hduser@dn1 .ssh]$ ssh-copy-id hduser@mn2
+The authenticity of host 'mn2 (192.168.1.12)' can't be established.
+ECDSA key fingerprint is e6:eb:b1:e5:9f:4f:e9:6e:83:11:e0:52:82:e5:98:2b.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+hduser@mn2's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hduser@mn2'"
+and check to make sure that only the key(s) you wanted were added.
+
+[hduser@dn1 .ssh]$
+
+>>>>
+[hduser@dn1 .ssh]$ ssh-copy-id hduser@dn1
+The authenticity of host 'dn1 (192.168.1.11)' can't be established.
+ECDSA key fingerprint is 66:96:34:c8:ac:9c:80:48:cd:58:f7:28:07:1d:1c:70.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+hduser@dn1's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hduser@dn1'"
+and check to make sure that only the key(s) you wanted were added.
+
+[hduser@dn1 .ssh]$
+
+>>>>
+[hduser@dn1 .ssh]$ ssh-copy-id localhost
+The authenticity of host 'localhost (::1)' can't be established.
+ECDSA key fingerprint is 66:96:34:c8:ac:9c:80:48:cd:58:f7:28:07:1d:1c:70.
+Are you sure you want to continue connecting (yes/no)? yes
+/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+
+/bin/ssh-copy-id: WARNING: All keys were skipped because they already exist on the remote system.
+
+[hduser@dn1 .ssh]$
+
+
+For testing
+>>>>>>>
+[hduser@dn1 .ssh]$ ssh localhost
+Last login: Tue Feb 17 22:55:26 2015
+[hduser@dn1 ~]$ exit
+logout
+Connection to localhost closed.
+[hduser@dn1 .ssh]$
+
+
+>>>>>
+
+[hduser@dn1 ~]$ ssh mn1
+Last login: Tue Feb 17 22:49:38 2015
+[hduser@mn1 ~]$ exit
+logout
+Connection to mn1 closed.
+[hduser@dn1 ~]$
+
+
+>>>>
+[hduser@dn1 ~]$ ssh mn2
+Last login: Tue Feb 17 22:51:56 2015
+[hduser@mn2 ~]$ exit
+logout
+Connection to mn2 closed.
+[hduser@dn1 ~]$
+
+>>>>
+[hduser@dn1 ~]$ ssh dn1
+Last login: Tue Feb 17 22:59:24 2015
+[hduser@dn1 ~]$ exit
+logout
+Connection to dn1 closed.
+[hduser@dn1 ~]$
+
+
+[hduser@dn1 ~]$ cd .ssh/
+[hduser@dn1 .ssh]$ chmod 600 id_rsa.pub authorized_keys
+From machine(192.168.1.12), we are able to make the communictaion without password(localhost, mn1 , mn2 , dn1)
+
+
+*************************MAKE the entry in sudoers for hduser*********
+MAchine(192.168.1.10)
+[root@master ~]# vim /etc/sudoers
+## Allow root to run any commands anywhere
+root    ALL=(ALL)       ALL
+hduser ALL=(ALL)  ALL
+
+machine(192.168.1.12)
+[root@master ~]# vim /etc/sudoers
+## Allow root to run any commands anywhere
+root    ALL=(ALL)       ALL
+hduser ALL=(ALL)  ALL
+
+
+machine(192.168.1.11)
+[root@master ~]# vim /etc/sudoers
+## Allow root to run any commands anywhere
+root    ALL=(ALL)       ALL
+hduser ALL=(ALL)  ALL
+*************************Change the permission***********************
+[root@master opt]# chown -R hduser:hduser hadoop-2.6.0.tar.gz
+[root@master opt]# chown -R hduser:hduser jdk1.7.0_72/
+***************************JAVA Installation *************************
+
+NOTE : We kept the java in /opt folder
+
+[root@master opt]# pwd
+/opt
+[root@master opt]# ls
+hadoop-2.6.0.tar.gz  jdk1.7.0_72  rh
+[root@master opt]# cd jdk1.7.0_72/
+[root@master jdk1.7.0_72]# pwd
+/opt/jdk1.7.0_72
+
+[root@master jdk1.7.0_72]# ls
+bin        lib          src.zip
+COPYRIGHT  LICENSE      THIRDPARTYLICENSEREADME-JAVAFX.txt
+db         man          THIRDPARTYLICENSEREADME.txt
+include    README.html
+jre        release
+[root@master jdk1.7.0_72]#
+
+
+
+
+
+2- Remove the existing java/jdk/jre from the both machine
+[root@master ~]# yum remove java* jdk* jre*
+
+3-[root@master ~]# java
+bash: java: command not found...
+
+[root@master ~]# jps
+bash: jps: command not found...
+
+
+Note : We have remove the JAVA from the machine.
+
+>>>Install Java with Alternatives
+
+After extracting archive file use alternatives command to install it. alternatives command is available in chkconfig package
+Note : Now we are going to install the JAVA & set the environment 
+
+[root@master jdk1.7.0_72]# pwd
+/opt/jdk1.7.0_72
+
+
+
+[root@master jdk1.7.0_72]# alternatives --install /usr/bin/java java /opt/jdk1.7.0_72/bin/java 1
+[root@master jdk1.7.0_72]# alternatives --config java
+
+There is 1 program that provides 'java'.
+
+  Selection    Command
+-----------------------------------------------
+*+ 1           /opt/jdk1.7.0_72/bin/java
+
+Enter to keep the current selection[+], or type selection number: 1
+[root@master jdk1.7.0_72]#
+
+
+At this point JAVA 1.7.0_72 has been successfully installed on your system. We also recommend to setup javac and jar commands path using alternatives
+
+[root@master jdk1.7.0_72]# java -version
+java version "1.7.0_72"
+Java(TM) SE Runtime Environment (build 1.7.0_72-b14)
+Java HotSpot(TM) 64-Bit Server VM (build 24.72-b04, mixed mode)
+[root@master jdk1.7.0_72]#
+[root@master jdk1.7.0_72]#
+
+
+
+[root@master jdk1.7.0_72]# alternatives --install /usr/bin/jar jar /opt/jdk1.7.0_72/bin/jar 1
+[root@master jdk1.7.0_72]# alternatives --install /usr/bin/javac javac /opt/jdk1.7.0_72/bin/javac 1
+[root@master jdk1.7.0_72]# alternatives --set jar /opt/jdk1.7.0_72/bin/jar
+[root@master jdk1.7.0_72]# alternatives --set javac /opt/jdk1.7.0_72/bin/javac
+
+
+>>Check Installed Java Version
+[root@master jdk1.7.0_72]# java -version
+java version "1.7.0_72"
+Java(TM) SE Runtime Environment (build 1.7.0_72-b14)
+Java HotSpot(TM) 64-Bit Server VM (build 24.72-b04, mixed mode)
+[root@master jdk1.7.0_72]#
+
+>>>>
+Configuring Environment Variables
+Most of java based application\92s uses environment variables to work. Set the Java environment variables using following commands
+1-Setup JAVA_HOME Variable
+[root@master jdk1.7.0_72]# export JAVA_HOME=/opt/jdk1.7.0_72
+
+
+2-Setup JRE_HOME Variable
+[root@master jdk1.7.0_72]# export JRE_HOME=/opt/jdk1.7.0_72/jre
+
+
+3-Setup PATH Variable
+[root@master jdk1.7.0_72]# export PATH=$PATH:/opt/jdk1.7.0_72/bin:/opt/jdk1.7.0_72/jre/bin
+[root@master jdk1.7.0_72]#
+
+
+
+>>>>
+Set JAVA_HOME / PATH for all user
+
+You need to setup global config in /etc/profile OR /etc/bash.bashrc file for all users:
+[root@master opt]# vim /etc/profile
+export JAVA_HOME=/opt/jdk1.7.0_72
+export JRE_HOME=/opt/jdk1.7.0_72/jre
+export PATH=$PATH:/opt/jdk1.7.0_72/bin:/opt/jdk1.7.0_72/jre/bin
+
+Save and close the file. Once again you need to type the following command to activate the path settings immediately:
+
+[root@master opt]# source /etc/profile
+
+OR
+# . /etc/profile
+
+>>>>
+[root@master opt]# su - hduser
+
+
+Set JAVA_HOME / PATH for a single user
+[hduser@mn1 ~]$ vim ~/.bash_profile
+export JAVA_HOME=/opt/jdk1.7.0_72
+export JRE_HOME=/opt/jdk1.7.0_72/jre
+export PATH=$PATH:/opt/jdk1.7.0_72/bin:/opt/jdk1.7.0_72/jre/bin
+
+[hduser@mn1 ~]$ source ~/.bash_profile
+or
+[hduser@mn1 ~]$ . ~/.bash_profile
+
+>>
+[hduser@mn1 ~]$ echo $JAVA_HOME
+/opt/jdk1.7.0_72
+
+>>
+[hduser@mn1 ~]$ echo $PATH
+/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/opt/jdk1.7.0_72/bin:/opt/jdk1.7.0_72/jre/bin:/home/hduser/.local/bin:/home/hduser/bin:/home/hduser/.local/bin:/home/hduser/bin:/opt/jdk1.7.0_72/bin:/opt/jdk1.7.0_72/jre/bin:/home/hduser/.local/bin:/home/hduser/bin:/opt/jdk1.7.0_72/bin:/opt/jdk1.7.0_72/jre/bin:/home/hduser/.local/bin:/home/hduser/bin:/opt/jdk1.7.0_72/bin:/opt/jdk1.7.0_72/jre/bin
+
+>>
+Tip: Use the following command to find out exact path to which java executable under UNIX / Linux:
+$ which java
+
+[hduser@mn1 ~]$ which java
+/bin/java
+Please note that the file ~/.bashrc is similar, with the exception that ~/.bash_profile runs only for Bash login shells and .bashrc runs for every new Bash shell.
+>>
+[hduser@mn1 ~]$ whereis java
+java: /usr/bin/java /opt/jdk1.7.0_72/bin/java /opt/jdk1.7.0_72/jre/bin/java
+
+>>
+[hduser@mn1 ~]$ env|grep -i java
+JAVA_HOME=/opt/jdk1.7.0_72
+
+************************************************************************************************************************************************************************
+[root@mn1 opt]# tar xzvf hadoop-2.6.0.tar.gz
+tar -xzvf hadoop-2.6.0.tar.gz
+[root@mn1 opt]# ll
+total 347820
+drwxr-xr-x  9  20000  20000       139 Nov 14 02:50 hadoop-2.6.0
+-rw-r-----  1 hduser hduser 195257604 Feb  7 13:37 hadoop-2.6.0.tar.gz
+drwxr-xr-x  8     10    143      4096 Dec 18 10:23 jdk1.7.0_72
+-rw-r--r--  1 hduser hduser 160901914 Feb  7 13:38 jdk-8u31-linux-x64.tar.gz
+drwxr-xr-x. 2 root   root           6 Jan 27  2014 rh
+
+[root@mn1 opt]# mv hadoop-2.6.0 2.3.0
+[root@mn1 opt]# ll
+total 347820
+drwxr-xr-x  9  20000  20000       139 Nov 14 02:50 2.3.0
+-rw-r-----  1 hduser hduser 195257604 Feb  7 13:37 hadoop-2.6.0.tar.gz
+drwxr-xr-x  8     10    143      4096 Dec 18 10:23 jdk1.7.0_72
+-rw-r--r--  1 hduser hduser 160901914 Feb  7 13:38 jdk-8u31-linux-x64.tar.gz
+drwxr-xr-x. 2 root   root           6 Jan 27  2014 rh
+
+[root@mn1 opt]# cd 2.3.0/
+[root@mn1 2.3.0]# ll
+total 36
+drwxr-xr-x 2 20000 20000  4096 Nov 14 02:50 bin
+drwxr-xr-x 3 20000 20000    19 Nov 14 02:50 etc
+drwxr-xr-x 2 20000 20000   101 Nov 14 02:50 include
+drwxr-xr-x 3 20000 20000    19 Nov 14 02:50 lib
+drwxr-xr-x 2 20000 20000  4096 Nov 14 02:50 libexec
+-rw-r--r-- 1 20000 20000 15429 Nov 14 02:50 LICENSE.txt
+-rw-r--r-- 1 20000 20000   101 Nov 14 02:50 NOTICE.txt
+-rw-r--r-- 1 20000 20000  1366 Nov 14 02:50 README.txt
+drwxr-xr-x 2 20000 20000  4096 Nov 14 02:50 sbin
+drwxr-xr-x 4 20000 20000    29 Nov 14 02:50 share
+[root@mn1 2.3.0]# 
+
+
+[root@mn1 ~]# pwd
+/root
+[root@mn1 ~]# vim .bash_profile
+[hduser@mn1 ~]$ cat .bash_profile
+# .bash_profile
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+        . ~/.bashrc
+fi
+
+# User specific environment and startup programs
+
+PATH=$PATH:$HOME/.local/bin:$HOME/bin
+#export JAVA_HOME=/opt/jdk1.7.0_72
+#export JRE_HOME=/opt/jdk1.7.0_72/jre
+#export PATH=$PATH:/opt/jdk1.7.0_72/bin:/opt/jdk1.7.0_72/jre/bin
+
+     export HADOOP_PREFIX="$HOME/2.3.0"
+     export PATH=$PATH:$HADOOP_PREFIX/bin
+     export PATH=$PATH:$HADOOP_PREFIX/sbin
+     export HADOOP_COMMON_HOME=${HADOOP_PREFIX}
+     export HADOOP_MAPRED_HOME=${HADOOP_PREFIX}
+     export HADOOP_HDFS_HOME=${HADOOP_PREFIX}
+     export YARN_HOME=${HADOOP_PREFIX}
+     #export JAVA_HOME="/usr/lib/jvm/jdk1.7.0_72"
+     export JAVA_HOME=/opt/jdk1.7.0_72
+     #export JAVA_HOME=/usr/java/jdk1.7.0_72/
+     export PATH=$PATH:$JAVA_HOME/bin
+
+export PATH
+[root@mn1 ~]# source .bash_profile
+**************************************************
+Extra Move
+vim ~/.bashrc
+vim .bash_profile
+which java
+ls -ld /bin/java
+ls -ld /etc/alternatives/java
+ls -ld /opt/jdk1.7.0_72/bin/java
+***************************************************
+[root@mn1 ~]# jps
+5456 Jps
+[root@mn1 ~]# java -version
+java version "1.8.0_31"
+Java(TM) SE Runtime Environment (build 1.8.0_31-b13)
+Java HotSpot(TM) 64-Bit Server VM (build 25.31-b07, mixed mode)
+echo $HOME
+
+[root@mn1 ~]# echo $JAVA_HOME
+/opt/jdk1.7.0_72
+
+[root@mn1 ~]# env|grep JAVA_HOME
+JAVA_HOME=/opt/jdk1.7.0_72
+
+[root@mn1 ~]# source .bash_profile
+***************Switch from hduser  & set the JAVA path *******
+>>>>Note : You have to copy the 2.3.0 folder in /home/hduser & copy the JDK folder 
+
+
+First, You should check, Java & JDK are working or not
+[root@mn1 ~]# su - hduser 
+Last login: Thu Feb 12 22:45:12 IST 2015 on pts/0
+[hduser@mn1 ~]$ 
+[hduser@mn1 ~]$ 
+[hduser@mn1 ~]$ jps
+6101 Jps
+[hduser@mn1 ~]$ 
+[hduser@mn1 ~]$ java -version
+java version "1.8.0_31"
+Java(TM) SE Runtime Environment (build 1.8.0_31-b13)
+Java HotSpot(TM) 64-Bit Server VM (build 25.31-b07, mixed mode)
+[hduser@mn1 ~]$ 
+
+[hduser@mn1 ~]$ vim ~/.bashrc 
+export PATH=$PATH:$HADOOP_PREFIX/bin
+export PATH=$PATH:$HADOOP_PREFIX/sbin
+export HADOOP_COMMON_HOME=${HADOOP_PREFIX}
+export HADOOP_MAPRED_HOME=${HADOOP_PREFIX}
+export HADOOP_HDFS_HOME=${HADOOP_PREFIX}
+export YARN_HOME=${HADOOP_PREFIX}
+#export JAVA_HOME="/usr/lib/jvm/jdk1.7.0_72"
+export JAVA_HOME=/opt/jdk1.7.0_72
+#export JAVA_HOME=/usr/java/jdk1.7.0_72/
+export PATH=$PATH:$JAVA_HOME/bin
+
+[hduser@mn1 ~]$ source ~/.bashrc
+
+
+NOTE : When you make the changes in ~/.bashrc file for hadoop folder after that try to type hd it will show all the hdfs command.
+[hduser@mn1 ~]$ hd
+hdfs             hdfs.cmd         hdfs-config.cmd  hdfs-config.sh   hdifftopam       hdmv_test        hdsploader 
+
+[hduser@mn1 ~]$ ll
+total 190688
+drwxr-xr-x. 11 hduser hduser      4096 Feb 15 23:05 2.3.0
+-rw-r--r--.  1 root   root   195257604 Feb 15 22:23 hadoop-2.6.0.tar.gz
+[hduser@mn1 ~]$ cd 2.3.0/
+[hduser@mn1 2.3.0]$ ls
+bin  etc  hadoop_data  include  lib  libexec  LICENSE.txt  logs  NOTICE.txt  README.txt  sbin  share
+[hduser@mn1 2.3.0]$ cd etc/
+[hduser@mn1 etc]$ ls
+hadoop
+[hduser@mn1 etc]$ cd hadoop/
+[hduser@mn1 hadoop]$ ls
+capacity-scheduler.xml  hadoop-env.sh               httpfs-env.sh            kms-env.sh            mapred-env.sh               ssl-client.xml.example
+configuration.xsl       hadoop-metrics2.properties  httpfs-log4j.properties  kms-log4j.properties  mapred-queues.xml.template  ssl-server.xml.example
+container-executor.cfg  hadoop-metrics.properties   httpfs-signature.secret  kms-site.xml          mapred-site.xml             yarn-env.cmd
+core-site.xml           hadoop-policy.xml           httpfs-site.xml          log4j.properties      mapred-site.xml.template    yarn-env.sh
+hadoop-env.cmd          hdfs-site.xml               kms-acls.xml             mapred-env.cmd        slaves                      yarn-site.xml
+
+[hduser@mn1 hadoop]$ vim hadoop-env.sh
+export JAVA_HOME=/opt/jdk1.7.0_72
+
+[hduser@mn1 hadoop]$ vim core-site.xml
+<configuration>
+<property>
+           <name>fs.defaultFS</name>
+           <value>hdfs://mn1:8020</value>
+           <final>true</final>
+     </property>
+     <property>
+           <name>io.file.buffer.size</name>
+           <value>131072</value>
+     </property>
+</configuration>
+
+
+[hduser@mn1 hadoop]$ vim hdfs-site.xml
+<configuration>
+       <property>
+   <name>dfs.namenode.name.dir</name>
+<value>file:///home/hduser/2.3.0/hadoop_data/dfs/name</value>
+       </property>
+       <property>
+    <name>dfs.blocksize</name>
+    <value>268435456</value>
+        </property>
+        <property>
+   <name>dfs.namenode.handler.count</name>
+   <value>100</value>
+         </property>
+         <property>
+    <name>dfs.datanode.data.dir</name>
+<value>file:///home/hduser/2.3.0/hadoop_data/dfs/data</value>
+          </property>
+</configuration>
+
+>>>>
+Copy the file
+cp mapred-site.xml.template mapred-site.xml
+[hduser@mn1 hadoop]$ vim mapred-site.xml
+<configuration>
+<property>
+           <name>mapreduce.framework.name</name>
+           <value>yarn</value>
+     </property>
+</configuration>
+
+
+[hduser@mn1 hadoop]$ cat yarn-site.xml
+<?xml version="1.0"?>
+<!--
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License. See accompanying LICENSE file.
+-->
+
+<configuration>
+        <property>
+                <name>yarn.resourcemanager.address</name>
+                <value>mn1:8032</value>
+        </property>
+        <property>
+                <name>yarn.resourcemanager.scheduler.address</name>
+                <value>mn1:8030</value>
+        </property>
+        <property>
+      <name>yarn.resourcemanager.resource-tracker.address</name>
+                <value>mn1:8031</value>
+        </property>
+        <property>
+                <name>yarn.resourcemanager.admin.address</name>
+                <value>mn1:8033</value>
+        </property>
+        <property>
+                <name>yarn.resourcemanager.webapp.address</name>
+                <value>mn1:8088</value>
+        </property>
+            <property>
+                <name>yarn.resourcemanager.scheduler.class</name>
+                 <value>org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler</value>
+        </property>
+        <property>
+               <name>yarn.nodemanager.aux-services</name>
+               <value>mapreduce_shuffle</value>
+        </property>
+        <property>
+                <name>yarn.nodemanager.local-dirs</name>
+                <value>file:///home/hduser/2.3.0/hadoop_data/yarn/yarn.nodemanager.local-dirs</value>
+        </property>
+        <property>
+                <name>yarn.nodemanager.log-dirs</name>
+                <value>file:///home/hduser/2.3.0/hadoop_data/yarn/logs</value>
+        </property>
+        <property>
+             <name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
+             <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+
+        </property>
+</configuration>
+
+[hduser@mn1 hadoop]$ pwd
+/home/hduser/2.3.0/etc/hadoop
+
+[hduser@mn1 hadoop]$ vim slaves
+mn1
+mn2
+
+[hduser@mn1 ~]$ scp -r 2.3.0 hduser@mn2:/home/hduser
+[hduser@mn1 ~]$ hdfs namenode -format
+[hduser@mn1 opt]$ start-all.sh
+
+[hduser@mn1 tmp]$ jps
+25218 SecondaryNameNode
+25522 Jps
+24820 NameNode
+24934 DataNode
+25369 ResourceManager
+25485 NodeManager
+[hduser@mn1 tmp]$ 
+
+******************************************************
+Troubeshooting
+Note: If you missing any node while running the JPS command then you have remove some entry from /tmp folder & /home/hduser/2.3.0/hadoop_data/dfs(Removed the name & data Folder)
+
+1-First Stop the service
+[hduser@mn1 tmp]$ stop-all.sh
+
+2-removed the rentry from /tmp folder
+[hduser@mn1 tmp]$ rm -rf hadoop-hduser hsperfdata_hduser Jetty_0_0_0_0_5007*
+
+3-Remove the /data & /name folder
+[hduser@mn1 tmp]$ cd /home/hduser/2.3.0/hadoop_data/dfs
+[hduser@mn1 dfs]$ 
+[hduser@mn1 dfs]$ 
+[hduser@mn1 dfs]$ ll
+total 0
+drwx------ 3 hduser hduser 38 Feb 13 01:25 data
+drwxrwxr-x 3 hduser hduser 38 Feb 13 01:25 name
+[hduser@mn1 dfs]$ 
+[hduser@mn1 dfs]$ 
+
+4-Format the name node
+[hduser@mn1 dfs]$ hdfs namenode -format
+
+5-start the service
+[hduser@mn1 tmp]$ start-all.sh
+
+6-
+[hduser@mn1 dfs]$ jps
+25218 SecondaryNameNode
+24820 NameNode
+26404 Jps
+24934 DataNode
+25369 ResourceManager
+25485 NodeManager
+
+**********************************************
+On the data node
+1-Run the JPS command to check the node
+[hduser@mn2 ~]$ jps
+7297 Jps
+7079 DataNode
+7183 NodeManager
+
+
+**********************************************
+From GUI(Access Hadoop Services in Browser)
+
+Note: If you are using the windows machine then you have to make the entries in host file
+run > type drivers > host 
+Make the entries in ip & host name
+
+
+Access Hadoop Services in Browser
+1-Hadoop NameNode started on port 50070 default. Access your server on port 50070 in your favorite web browser.
+http://mn1:50070/dfshealth.html#tab-overview
+
+2-Now access port 8088 for getting the information about cluster and all applications
+http://mn1:8088/cluster
+
+3-Access port 50090 for getting details about secondary namenode.
+http://mn1:50090/status.html
+
+4-Access port 50075 to get details about DataNode
+http://mn1:50075/
+or
+Access port 50075 to get details about DataNode
+http://mn1:50075/dataNodeHome.jsp
+
+
+
+*********************************************ZOOKEEPER INSTALLATION*****************************************************
+
+   
+Step 1 : download and configure Zookeeper
+
+1.1  Download and configure Zookeeper software package from.( https://www.apache.org/dist/zookeeper/zookeeper-3.4.5/zookeeper-3.4.5.tar.gz)
+
+[hduser@mn1~]$wget https://www.apache.org/dist/zookeeper/zookeeper-3.4.5/zookeeper-3.4.5.tar.gz
+
+Extract source
+[hduser@mn1~]$tar –zxvf zookeeper-3.4.5.tar.gz
+
+1.2  Zookeeper related configuration files are located
+
+Configuration files     : /home/hduser/zookeeper-3.4.6/conf
+
+Binary executables      : /home/hduser/zookeeper-3.4.6/bin
+
+
+The Main configuration file
+[hduser@mn1 ~]$ ls -ld /home/hduser/zookeeper-3.4.6/conf/zoo_sample.cfg
+-rw-rw-r--. 1 hduser hduser 922 Feb 20  2014 /home/hduser/zookeeper-3.4.6/conf/zoo_sample.cfg
+
+
+[hduser@mn1 ~]$ cd /home/hduser/zookeeper-3.4.6/conf/
+[hduser@mn1 conf]$
+[hduser@mn1 conf]$ ll
+total 12
+-rw-rw-r--. 1 hduser hduser  535 Feb 20  2014 configuration.xsl
+-rw-rw-r--. 1 hduser hduser 2161 Feb 20  2014 log4j.properties
+-rw-rw-r--. 1 hduser hduser  922 Feb 20  2014 zoo_sample.cfg
+
+
+[hduser@mn1 conf]$ cp -rp zoo_sample.cfg zoo.cfg
+
+1.3 Modifying zoo.cfg as per our installation guide
+[hduser@mn1 conf]$ cat zoo.cfg
+ticketTime=2000
+clientPort=2181
+initLimit=5
+syncLimit=2
+dataDir=/home/hduser/zookeeper/data/
+dataLogDir=/home/hduser/zookeeper/log/
+server.1=mn1:2888:3888
+server.2=mn2:2889:3889
+server.3=dn1:2890:3890
+[hduser@mn1 conf]$
+
+Note :-  Each of the servers hosted in the same physical machine as virtual instance , every server port number has changed to mn1:2888:3888 , mn2: 2889:3889 & dn1:2890:3890
+
+
+Note:Create the myid file in /home/hduser/zookeeper/data/ and assign the value of each of the nodes in cluster. (mn1=1,mn2=2 & dn1=3)
+
+Create the folder structure for Zookeeper data and logs as defined in zoo.cfg , repeat following step in all the nodes in the cluster (mn1, mn2 & dn1)
+
+>>>> on the mn1
+
+[hduser@mn1 conf]$ mkdir -p /home/hduser/zookeeper/data/
+[hduser@mn1 conf]$ cd /home/hduser/zookeeper/data/
+[hduser@mn1 data]$ pwd
+/home/hduser/zookeeper/data
+[hduser@mn1 data]$ mkdir -p /home/hduser/zookeeper/log/
+
+
+[hduser@mn1 data]$ vi /home/hduser/zookeeper/data/myid
+1
+wq!
+
+>>>>
+[hduser@mn2 ~]$  mkdir -p /home/hduser/zookeeper/data/
+[hduser@mn2 ~]$ cd /home/hduser/zookeeper/data/
+[hduser@mn2 data]$ pwd
+/home/hduser/zookeeper/data
+[hduser@mn2 data]$  mkdir -p /home/hduser/zookeeper/log/
+
+[hduser@mn2 data]$ vi /home/hduser/zookeeper/data/myid
+2
+[hduser@mn2 data]$ cat /home/hduser/zookeeper/data/myid
+2
+
+
+
+
+[hduser@mn1~]$scp zookeeper-3.4.6 hduser@mn2
+
+
+
+
+>>>>>mn1
+
+[hduser@mn1 ~]$ cd zookeeper-3.4.6/
+[hduser@mn1 zookeeper-3.4.6]$ ll
+total 1544
+drwxr-xr-x.  2 hduser hduser    4096 Feb 20  2014 bin
+-rw-rw-r--.  1 hduser hduser   82446 Feb 20  2014 build.xml
+-rw-rw-r--.  1 hduser hduser   80776 Feb 20  2014 CHANGES.txt
+drwxr-xr-x.  2 hduser hduser      88 Feb 16 23:01 conf
+drwxr-xr-x. 10 hduser hduser    4096 Feb 20  2014 contrib
+drwxr-xr-x.  2 hduser hduser    4096 Feb 20  2014 dist-maven
+drwxr-xr-x.  6 hduser hduser    4096 Feb 20  2014 docs
+-rw-rw-r--.  1 hduser hduser    1953 Feb 20  2014 ivysettings.xml
+-rw-rw-r--.  1 hduser hduser    3375 Feb 20  2014 ivy.xml
+drwxr-xr-x.  4 hduser hduser    4096 Feb 20  2014 lib
+-rw-rw-r--.  1 hduser hduser   11358 Feb 20  2014 LICENSE.txt
+-rw-rw-r--.  1 hduser hduser     170 Feb 20  2014 NOTICE.txt
+-rw-rw-r--.  1 hduser hduser    1770 Feb 20  2014 README_packaging.txt
+-rw-rw-r--.  1 hduser hduser    1585 Feb 20  2014 README.txt
+drwxr-xr-x.  5 hduser hduser      44 Feb 20  2014 recipes
+drwxr-xr-x.  8 hduser hduser    4096 Feb 20  2014 src
+-rw-rw-r--.  1 hduser hduser 1340305 Feb 20  2014 zookeeper-3.4.6.jar
+-rw-rw-r--.  1 hduser hduser     836 Feb 20  2014 zookeeper-3.4.6.jar.asc
+-rw-rw-r--.  1 hduser hduser      33 Feb 20  2014 zookeeper-3.4.6.jar.md5
+-rw-rw-r--.  1 hduser hduser      41 Feb 20  2014 zookeeper-3.4.6.jar.sha1
+
+[hduser@mn1 zookeeper-3.4.6]$ cd bin/
+[hduser@mn1 bin]$ ll
+total 36
+-rwxr-xr-x. 1 hduser hduser  238 Feb 20  2014 README.txt
+-rwxr-xr-x. 1 hduser hduser 1937 Feb 20  2014 zkCleanup.sh
+-rwxr-xr-x. 1 hduser hduser 1049 Feb 20  2014 zkCli.cmd
+-rwxr-xr-x. 1 hduser hduser 1534 Feb 20  2014 zkCli.sh
+-rwxr-xr-x. 1 hduser hduser 1333 Feb 20  2014 zkEnv.cmd
+-rwxr-xr-x. 1 hduser hduser 2696 Feb 20  2014 zkEnv.sh
+-rwxr-xr-x. 1 hduser hduser 1084 Feb 20  2014 zkServer.cmd
+-rwxr-xr-x. 1 hduser hduser 5742 Feb 20  2014 zkServer.sh
+
+[hduser@mn1 bin]$ ./zkServer.sh start
+JMX enabled by default
+Using config: /home/hduser/zookeeper-3.4.6/bin/../conf/zoo.cfg
+Starting zookeeper ... STARTED
+
+
+[hduser@mn1 bin]$ ./zkServer.sh status
+JMX enabled by default
+Using config: /home/hduser/zookeeper-3.4.6/bin/../conf/zoo.cfg
+Error contacting service. It is probably not running.
+
+
+[hduser@mn1 bin]$ jps
+57256 Jps
+54816 SecondaryNameNode
+54325 NameNode
+54476 DataNode
+55120 NodeManager
+57199 QuorumPeerMain
+54982 ResourceManager
+[hduser@mn1 bin]$
+
+
+
+>>>>mn2
+[hduser@mn2 ~]$ cd zookeeper-3.4.6/
+[hduser@mn2 zookeeper-3.4.6]$ ll
+total 1544
+drwxr-xr-x.  2 hduser hduser    4096 Feb 20  2014 bin
+-rw-rw-r--.  1 hduser hduser   82446 Feb 20  2014 build.xml
+-rw-rw-r--.  1 hduser hduser   80776 Feb 20  2014 CHANGES.txt
+drwxr-xr-x.  2 hduser hduser      88 Feb 16 23:01 conf
+drwxr-xr-x. 10 hduser hduser    4096 Feb 20  2014 contrib
+drwxr-xr-x.  2 hduser hduser    4096 Feb 20  2014 dist-maven
+drwxr-xr-x.  6 hduser hduser    4096 Feb 20  2014 docs
+-rw-rw-r--.  1 hduser hduser    1953 Feb 20  2014 ivysettings.xml
+-rw-rw-r--.  1 hduser hduser    3375 Feb 20  2014 ivy.xml
+drwxr-xr-x.  4 hduser hduser    4096 Feb 20  2014 lib
+-rw-rw-r--.  1 hduser hduser   11358 Feb 20  2014 LICENSE.txt
+-rw-rw-r--.  1 hduser hduser     170 Feb 20  2014 NOTICE.txt
+-rw-rw-r--.  1 hduser hduser    1770 Feb 20  2014 README_packaging.txt
+-rw-rw-r--.  1 hduser hduser    1585 Feb 20  2014 README.txt
+drwxr-xr-x.  5 hduser hduser      44 Feb 20  2014 recipes
+drwxr-xr-x.  8 hduser hduser    4096 Feb 20  2014 src
+-rw-rw-r--.  1 hduser hduser 1340305 Feb 20  2014 zookeeper-3.4.6.jar
+-rw-rw-r--.  1 hduser hduser     836 Feb 20  2014 zookeeper-3.4.6.jar.asc
+-rw-rw-r--.  1 hduser hduser      33 Feb 20  2014 zookeeper-3.4.6.jar.md5
+-rw-rw-r--.  1 hduser hduser      41 Feb 20  2014 zookeeper-3.4.6.jar.sha1
+
+
+[hduser@mn2 zookeeper-3.4.6]$ cd bin
+[hduser@mn2 bin]$ ll
+total 36
+-rwxr-xr-x. 1 hduser hduser  238 Feb 20  2014 README.txt
+-rwxr-xr-x. 1 hduser hduser 1937 Feb 20  2014 zkCleanup.sh
+-rwxr-xr-x. 1 hduser hduser 1049 Feb 20  2014 zkCli.cmd
+-rwxr-xr-x. 1 hduser hduser 1534 Feb 20  2014 zkCli.sh
+-rwxr-xr-x. 1 hduser hduser 1333 Feb 20  2014 zkEnv.cmd
+-rwxr-xr-x. 1 hduser hduser 2696 Feb 20  2014 zkEnv.sh
+-rwxr-xr-x. 1 hduser hduser 1084 Feb 20  2014 zkServer.cmd
+-rwxr-xr-x. 1 hduser hduser 5742 Feb 20  2014 zkServer.sh
+
+[hduser@mn2 bin]$ ./zkServer.
+zkServer.cmd  zkServer.sh
+
+[hduser@mn2 bin]$ ./zkServer.sh start
+JMX enabled by default
+Using config: /home/hduser/zookeeper-3.4.6/bin/../conf/zoo.cfg
+Starting zookeeper ... STARTED
+
+
+
+[hduser@mn2 bin]$ ./zkServer.sh status
+JMX enabled by default
+Using config: /home/hduser/zookeeper-3.4.6/bin/../conf/zoo.cfg
+Error contacting service. It is probably not running.
+
+
+
+
+
+[hduser@mn2 bin]$ jps
+10666 NodeManager
+13507 Jps
+10561 DataNode
+13448 QuorumPeerMain
+[hduser@mn2 bin]$
+
+
+
+***********************************High Availability ************************************************
